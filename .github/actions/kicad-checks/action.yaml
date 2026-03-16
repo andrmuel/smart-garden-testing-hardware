@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 GARDENA GmbH
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+description: "Run KiCAD checks (ERC & DRC)"
+
+inputs:
+  project-dir:
+    required: true
+    type: string
+  project-name:
+    required: true
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - name: run ERC
+      shell: bash
+      run: |
+        kicad-cli sch erc \
+          --severity-warning \
+          --severity-error \
+          --exit-code-violations \
+          "${{ inputs.project-dir }}/${{ inputs.project-name}}.kicad_sch"
+    - name: run DRC
+      shell: bash
+      run: |
+        kicad-cli pcb drc \
+          --severity-warning \
+          --severity-error \
+          --exit-code-violations \
+          "${{ inputs.project-dir }}/${{ inputs.project-name}}.kicad_pcb"

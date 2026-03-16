@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: 2026 GARDENA GmbH
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+name: run ERC & DRC checks for all projects
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+# jobs:
+#   run_checks_dongle:
+#     uses: ./.github/workflows/kicad-checks-template.yaml
+#     with:
+#       project-dir: lemonbeat_dongle
+#       project-name: dongle
+
+jobs:
+  run-checks:
+    name: run KiCAD schematic & PCB checks
+    runs-on: ubuntu-24.04
+    steps:
+      - name: install dependencies
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-9.0-releases
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            kicad \
+            kicad-footprints \
+            kicad-libraries \
+            kicad-symbols
+      - name: copy library tables
+        run: |
+          mkdir -p $HOME/.config/kicad/9.0
+          cp /usr/share/kicad/template/sym-lib-table $HOME/.config/kicad/9.0/
+          cp /usr/share/kicad/template/fp-lib-table $HOME/.config/kicad/9.0/
+      - name: show KiCad version
+        run: |
+          kicad-cli --version
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: run checks for Lemonbeat Dongle
+        if: always()
+        uses: ./.github/actions/kicad-checks
+        with:
+          project-dir: lemonbeat_dongle
+          project-name: dongle
+      - name: run checks for Lemonbeat Dongle MicroJig
+        if: always()
+        uses: ./.github/actions/kicad-checks
+        with:
+          project-dir: lemonbeat_dongle_microjig
+          project-name: lemonbeat_dongle_microjig
+      - name: run checks for WoR DK
+        if: always()
+        uses: ./.github/actions/kicad-checks
+        with:
+          project-dir: wor_dk
+          project-name: wor_dk
+      - name: run checks for Power Splitter
+        if: always()
+        uses: ./.github/actions/kicad-checks
+        with:
+          project-dir: power_splitter
+          project-name: power_splitter
+      - name: run checks for Power Splitter with Attenuator
+        if: always()
+        uses: ./.github/actions/kicad-checks
+        with:
+          project-dir: power_splitter_attenuator
+          project-name: power_splitter_attenuator
+      - name: upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: ./*.rpt
+          if-no-files-found: warn
